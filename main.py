@@ -891,7 +891,7 @@ elif tab_option == "📈 Анализ отклонения (4 пример)":
     result_df = pd.DataFrame()
     
     # Загрузка данных
-    df = load_data()
+    df = load_data_1(uploaded_file)
     
     # Проверка наличия данных
     if df.empty:
