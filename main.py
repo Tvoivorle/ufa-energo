@@ -837,7 +837,7 @@ elif tab_option == "📈 Анализ отклонения (4 пример)":
     uploaded_file = st.file_uploader("Загрузите CSV файл с данными", type=["csv"])
 
     @st.cache_data
-    def load_data(uploaded_file):
+    def load_data_1(uploaded_file):
         if uploaded_file is None:
             st.warning("Пожалуйста, загрузите файл.")
             return pd.DataFrame()  # Возвращаем пустой DataFrame, если файл не загружен
@@ -891,7 +891,7 @@ elif tab_option == "📈 Анализ отклонения (4 пример)":
     result_df = pd.DataFrame()
     
     # Загрузка данных
-    df = load_data()
+    df = load_data_1()
     
     # Проверка наличия данных
     if df.empty:
