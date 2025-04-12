@@ -838,7 +838,7 @@ elif tab_option == "📈 Анализ отклонения (4 пример)":
     uploaded_file = st.file_uploader("Загрузите CSV файл с данными", type=["csv"])
 
     @st.cache_data
-    def load_data_1(uploaded_file):
+    def load_data(uploaded_file):
         if uploaded_file is None:
             st.warning("Пожалуйста, загрузите файл.")
             return pd.DataFrame()  # Возвращаем пустой DataFrame, если файл не загружен
@@ -887,82 +887,115 @@ elif tab_option == "📈 Анализ отклонения (4 пример)":
             st.error(f"Ошибка при обработке файла: {e}")
             return pd.DataFrame()
 
-    # Инициализация result_df как пустой DataFrame
-    result_df = pd.DataFrame()
-    
+
     # Загрузка данных
-    df = load_data_1(uploaded_file)
-    
+    df = load_data(uploaded_file)
+
     # Проверка наличия данных
     if df.empty:
-        st.error("Нет данных для отображения")
+        st.error("Нет данных для отображения. Загрузите корректный файл.")
         st.stop()
-    else:
-        # Применение фильтров и формирование result_df
-        query = (
+
+    # Фильтры
+    st.subheader("Фильтры")
+    floor_range = st.slider(
+        'Этажность',
+        min_value=int(df['Этажность объекта'].min()),
+        max_value=int(df['Этажность объекта'].max()),
+        value=(int(df['Этажность объекта'].min()), int(df['Этажность объекта'].max()))
+    )
+    area_min = int(df['Общая площадь объекта'].min())
+    area_max = int(df['Общая площадь объекта'].max())
+    area_range = st.slider(
+        'Общая площадь',
+        min_value=area_min,
+        max_value=area_max,
+        value=(area_min, area_max)
+    )
+    year_range = st.slider(
+        'Период постройки',
+        min_value=int(df['Дата постройки'].min()),
+        max_value=int(df['Дата постройки'].max()),
+        value=(int(df['Дата постройки'].min()), int(df['Дата постройки'].max()))
+    )
+    consumption_year = st.selectbox(
+        'Год',
+        options=[None] + sorted(df['Год'].unique().tolist())
+    )
+    consumption_month = st.selectbox(
+        'Месяц',
+        options=[None] + sorted(df['Месяц'].unique().tolist())
+    )
+    gvs_filter = st.selectbox('ГВС ИТП', ['Все', 'да', 'нет'])
+
+    # Применение фильтров
+    query = (
             df['Этажность объекта'].between(*floor_range) &
             df['Общая площадь объекта'].between(*area_range) &
             df['Дата постройки'].between(*year_range)
-        )
-        if consumption_year:
-            query &= df['Год'] == consumption_year
-        if consumption_month:
-            query &= df['Месяц'] == consumption_month
-        if gvs_filter != 'Все':
-            query &= df['ГВС ИТП да/нет'] == gvs_filter
-    
-        filtered_df = df[query]
-    
-        # Формирование таблицы
-        result_df = filtered_df[[
-            'Адрес объекта',
-            'Тип объекта',
-            'Категория здания',
-            'Этажность объекта',
-            'Дата постройки',
-            'Общая площадь объекта',
-            'ГВС ИТП да/нет',
-            'Текущее потребление, Гкал',
-            'Год',
-            'Месяц',
-            'Широта',
-            'Долгота'
-        ]].rename(columns={
-            'Текущее потребление, Гкал': 'Потребление, Гкал'
-        })
-    
-        # Добавление отклонения и среднего значения
-        if not result_df.empty:
-            average_consumption = result_df['Потребление, Гкал'].mean()
-            if average_consumption != 0:
-                result_df['Отклонение от среднего в %'] = (
+    )
+    if consumption_year:
+        query &= df['Год'] == consumption_year
+    if consumption_month:
+        query &= df['Месяц'] == consumption_month
+    if gvs_filter != 'Все':
+        query &= df['ГВС ИТП да/нет'] == gvs_filter
+
+    filtered_df = df[query]
+
+    # Формирование таблицы
+    result_df = filtered_df[[
+        'Адрес объекта',
+        'Тип объекта',
+        'Категория здания',
+        'Этажность объекта',
+        'Дата постройки',
+        'Общая площадь объекта',
+        'ГВС ИТП да/нет',
+        'Текущее потребление, Гкал',
+        'Год',
+        'Месяц',
+        'Широта',
+        'Долгота'
+    ]].rename(columns={
+        'Текущее потребление, Гкал': 'Потребление, Гкал'
+    })
+
+    # Добавление отклонения и среднего значения
+    if not result_df.empty:
+        average_consumption = result_df['Потребление, Гкал'].mean()
+        if average_consumption != 0:
+            result_df['Отклонение от среднего в %'] = (
                     (result_df['Потребление, Гкал'] - average_consumption) / average_consumption * 100
-                ).round(2)
-            else:
-                result_df['Отклонение от среднего в %'] = 0.0
-    
-            # Создаем строку со средним значением
-            average_row = pd.DataFrame([[
-                'Среднее значение',
-                None,
-                None,
-                None,
-                None,
-                None,
-                None,
-                round(average_consumption, 2),
-                None,
-                None,
-                None,
-                None,
-                0.0
-            ]], columns=result_df.columns)
-    
-            # Объединяем основные данные и среднее значение
-            result_df = pd.concat([result_df, average_row], ignore_index=True)
-            result_df = result_df.fillna('')
+            ).round(2)
         else:
-            result_df['Отклонение от среднего в %'] = ''
+            result_df['Отклонение от среднего в %'] = 0.0
+        # Создаем строку со средним значением
+        average_row = pd.DataFrame([[
+            'Среднее значение',
+            None,
+            None,
+            None,
+            None,
+            None,
+            None,
+            round(average_consumption, 2),
+            None,
+            None,
+            None,
+            None,
+            0.0
+        ]], columns=result_df.columns)
+        # Объединяем основные данные и среднее значение
+        result_df = pd.concat([result_df, average_row], ignore_index=True)
+        for column in result_df.columns:
+            if pd.api.types.is_numeric_dtype(result_df[column]):
+                result_df[column] = result_df[column].fillna(0)
+            else:
+                result_df[column] = result_df[column].fillna('')
+    else:
+        result_df['Отклонение от среднего в %'] = ''
+
 
     # Функция для стилизации
     def apply_styles(row):
