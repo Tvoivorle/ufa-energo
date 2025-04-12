@@ -960,36 +960,44 @@ elif tab_option == "📈 Анализ отклонения (4 пример)":
         'Текущее потребление, Гкал': 'Потребление, Гкал'
     })
 
-    # Добавление отклонения и среднего значения
-    if not result_df.empty:
-        average_consumption = result_df['Потребление, Гкал'].mean()
-        if average_consumption != 0:
-            result_df['Отклонение от среднего в %'] = (
-                    (result_df['Потребление, Гкал'] - average_consumption) / average_consumption * 100
-            ).round(2)
-        else:
-            result_df['Отклонение от среднего в %'] = 0.0
-        # Создаем строку со средним значением
-        average_row = pd.DataFrame([[
-            'Среднее значение',
-            None,
-            None,
-            None,
-            None,
-            None,
-            None,
-            round(average_consumption, 2),
-            None,
-            None,
-            None,
-            None,
-            0.0
-        ]], columns=result_df.columns)
-        # Объединяем основные данные и среднее значение
-        result_df = pd.concat([result_df, average_row], ignore_index=True)
-        result_df = result_df.fillna('')
+# Добавление отклонения и среднего значения
+if not result_df.empty:
+    average_consumption = result_df['Потребление, Гкал'].mean()
+    if average_consumption != 0:
+        result_df['Отклонение от среднего в %'] = (
+            (result_df['Потребление, Гкал'] - average_consumption) / average_consumption * 100
+        ).round(2)
     else:
-        result_df['Отклонение от среднего в %'] = ''
+        result_df['Отклонение от среднего в %'] = 0.0
+
+    # Создаем строку со средним значением
+    average_row = pd.DataFrame([[
+        'Среднее значение',
+        None,
+        None,
+        None,
+        None,
+        None,
+        None,
+        round(average_consumption, 2),
+        None,
+        None,
+        None,
+        None,
+        0.0
+    ]], columns=result_df.columns)
+
+    # Объединяем основные данные и среднее значение
+    result_df = pd.concat([result_df, average_row], ignore_index=True)
+
+    # Заполняем пропуски в зависимости от типа данных
+    for col in result_df.columns:
+        if pd.api.types.is_numeric_dtype(result_df[col]):
+            result_df[col] = result_df[col].fillna(0)  # Для числовых столбцов
+        else:
+            result_df[col] = result_df[col].fillna('')  # Для строковых столбцов
+else:
+    result_df['Отклонение от среднего в %'] = ''
 
 
     # Функция для стилизации
