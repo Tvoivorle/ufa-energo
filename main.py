@@ -211,7 +211,7 @@ elif tab_option == "0️⃣ Анализ нулевых значений (1 пр
 
             # Загрузка файла с типами строений
             try:
-                dataframe2 = pd.read_excel('sourse/Тип_строения.xlsx')
+                dataframe2 = pd.read_excel('Тип_строения.xlsx')
                 dataframe2 = dataframe2.drop_duplicates(subset='Адрес объекта')
 
                 # Приведение поля "Адрес объекта" к единому виду
