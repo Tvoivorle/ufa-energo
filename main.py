@@ -887,6 +887,8 @@ elif tab_option == "📈 Анализ отклонения (4 пример)":
             st.error(f"Ошибка при обработке файла: {e}")
             return pd.DataFrame()
 
+    # Инициализация result_df как пустой DataFrame
+    result_df = pd.DataFrame()
 
     # Загрузка данных
     df = load_data_1(uploaded_file)
